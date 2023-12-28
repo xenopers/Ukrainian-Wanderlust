@@ -116,7 +116,7 @@ public class PlayerController : Character
     void Run()
     {
         Vector3 dir = transform.right * Input.GetAxis("Horizontal");
-        sprite.flipX = dir.x > 0.0f;
+        sprite.flipX = dir.x < 0.0f;
         float moveX = Input.GetAxis("Horizontal");
 
         rb.velocity = new Vector2(moveX * moveSpeed, rb.velocity.y);
