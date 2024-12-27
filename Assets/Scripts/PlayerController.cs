@@ -3,21 +3,22 @@ using UnityEngine;
 using UnityEngine.U2D;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
+using System;
 
 
 
 public class PlayerController : Character
 {
-    public float jumpForce = 5f;
+    public float jumpForce = 7.5f;
 
-
+    [SerializeField] private bool isRunning;
     private bool isGrounded = false;
     private SpriteRenderer sprite;
     private Rigidbody2D rb;
     public Transform attackPoint;
     public float attackRange = 1f;
     public LayerMask enemyLayer;
-    
+
 
     private float timePressing = 0;
 
@@ -41,11 +42,18 @@ public class PlayerController : Character
 
     private void Update()
     {
-        if (!Input.GetMouseButton(0)) {
-            if (Input.GetButton("Horizontal")) {
-            Run();
+        if (!Input.GetMouseButton(0))
+        {
+            if (Input.GetButton("Horizontal"))
+            {
+                Move();
             }
-        }       
+            else
+            {
+                if (isRunning)
+                    isRunning = false;
+            }
+        }
         if (Input.GetButtonDown("Jump") && isGrounded)
         {
             rb.AddForce(new Vector2(0f, jumpForce), ForceMode2D.Impulse);
@@ -54,16 +62,19 @@ public class PlayerController : Character
         if (Input.GetMouseButton(0))
         {
             timePressing += Time.deltaTime;
-            if(timePressing > 0.6f) {
+            if (timePressing > 0.6f)
+            {
                 AttackEnemy();
                 timePressing = 0;
             }
-        } else {
+        }
+        else
+        {
             timePressing = 0;
         }
 
         UpdateState();
-    
+
         timer -= Time.deltaTime;
 
         if (timer <= 0f)
@@ -75,12 +86,12 @@ public class PlayerController : Character
 
     private void HealPlayer()
     {
-        if(currentHealth < maxHealth) {
+        if (currentHealth < maxHealth)
+        {
             currentHealth += healingAmount;
             healthBar.fillAmount = currentHealth / maxHealth;
-            Debug.Log("Персонаж похілився!");
         }
-        
+
     }
 
     public override void Die()
@@ -113,13 +124,14 @@ public class PlayerController : Character
         }
     }
 
-    void Run()
+    private void Move()
     {
+        if (!isRunning && Input.GetKeyDown(KeyCode.LeftShift))
+            isRunning = true;
         Vector3 dir = transform.right * Input.GetAxis("Horizontal");
         sprite.flipX = dir.x < 0.0f;
         float moveX = Input.GetAxis("Horizontal");
-
-        rb.velocity = new Vector2(moveX * moveSpeed, rb.velocity.y);
+        rb.velocity = new Vector2(moveX * (isRunning ? moveSpeed : moveSpeed * 0.75f), rb.velocity.y);
     }
 
     private void OnCollisionEnter2D(Collision2D collision)
@@ -130,7 +142,7 @@ public class PlayerController : Character
             isGrounded = true;
         }
     }
-    
+
     private void OnCollisionExit2D(Collision2D collision)
     {
         if (collision.gameObject.CompareTag("Ground"))
@@ -141,26 +153,25 @@ public class PlayerController : Character
 
     private void UpdateState()
     {
-        if(Input.GetMouseButton(0))
+        if (Input.GetMouseButton(0))
         {
-            animator.SetInteger(state, (int) CharStates.attack);
-        } else if(Input.GetAxis("Horizontal") != 0)
-        {
-            animator.SetInteger(state, (int) CharStates.run);
+            animator.SetInteger(state, (int)CharStates.attack);
         }
-        else 
+        else if (Input.GetAxis("Horizontal") != 0)
         {
-            animator.SetInteger(state, (int) CharStates.idle);
+            animator.SetInteger(state, isRunning ? (int)CharStates.run : (int)CharStates.walk);
+        }
+        else
+        {
+            animator.SetInteger(state, (int)CharStates.idle);
         }
     }
 
-    enum CharStates 
+    enum CharStates
     {
         idle = 0,
         run = 1,
-        attack = 2
+        attack = 2,
+        walk = 3
     }
-
-    
-
 }
